@@ -1,9 +1,29 @@
 /** This is a setup funciton. */
 function setup() {
-  createCanvas(400, 400);
+  var canvas = createCanvas(400, 400);
+  canvas.parent("sketch-holder");
+
+  init();
+}
+
+/** This is the main interface with tweakpane */
+const p = {
+  dt: 0.1,
+};
+
+/** A second dict witch holds the current simulation state */
+const s = {};
+
+function init() {
+  s.t = 0.0;
 }
 
 /** This is a draw function. */
 function draw() {
-  background(220);
+  background(255);
+
+  s.dt = p.dt;
+  s.t += s.dt;
+
+  circle(200 + 100 * sin(s.t), 200 + 100 * cos(s.t), 10);
 }
