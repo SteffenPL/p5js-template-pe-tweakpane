@@ -8,7 +8,7 @@ function setup() {
 
 /** This is the main interface with tweakpane */
 const p = {
-  dt: 0.1,
+  dt: 0.01,
 };
 
 /** A second dict witch holds the current simulation state */
