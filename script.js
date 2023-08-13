@@ -1,6 +1,6 @@
 /** This is a setup funciton. */
 function setup() {
-  var canvas = createCanvas(400, 400);
+  var canvas = createCanvas(500, 400);
   canvas.parent("sketch-holder");
 
   init();
@@ -23,11 +23,19 @@ function init() {
 const constants = {
   phys_width: 100, // physical units of the width
   phys_height: 100, // physical units of the height
-  // we fit a square of phys_width x phys_height into the canvas
 };
 
 function scaleCanvas() {
-  scale(width / constants.phys_width, height / constants.phys_height);
+  // we fit a square of phys_width x phys_height into the canvas
+  const ratioX = width / constants.phys_width;
+  const ratioY = height / constants.phys_height;
+  if (ratioX < ratioY) {
+    translate(0, (height - width) / 2);
+    scale(ratioX, ratioX);
+  } else {
+    translate((width - height) / 2, 0);
+    scale(ratioY, ratioY);
+  }
 }
 
 /** This is a draw function. */
