@@ -16,7 +16,7 @@ h1 {
 canvas {
   display: block;
   margin: auto;
-  border: 1px solid #ccc;
+  border: 0px solid #ccc;
 }
 
 .pure-g > div {
@@ -24,7 +24,7 @@ canvas {
 }
 .l-box {
   padding: 1em;
-  padding-top: 0em;
+  padding-top: 1em;
 }
 
 .tweakpane {
