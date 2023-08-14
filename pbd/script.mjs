@@ -1,7 +1,8 @@
 const pv = p5.Vector;
+import { scaleCanvas } from "./p5utils.mjs";
 
 /** This is the main interface with tweakpane */
-const p = {
+export const p = {
   dt: 0.2,
   N: 30,
   R: 5.0,
@@ -13,7 +14,7 @@ const p = {
   coord_center: { x: 0, y: 0 }, // physical center of the canvas
 };
 
-let simulation = function (P) {
+export let simulation = function (P) {
   /** export functions for external use */
   P.setup = setup;
   P.draw = draw;
@@ -100,7 +101,7 @@ let simulation = function (P) {
     }
 
     if (draw_t > p.dt_frame) {
-      scaleCanvas();
+      scaleCanvas(P, p);
       P.background(255);
 
       // draw the cells
@@ -117,21 +118,4 @@ let simulation = function (P) {
       draw_t = 0.0;
     }
   }
-
-  /* Helper functions */
-  function scaleCanvas() {
-    // we fit a rectangle of w x h into the canvas
-    const ratioX = P.width / p.w;
-    const ratioY = P.height / p.h;
-    if (ratioX < ratioY) {
-      P.translate(0, (P.height - p.h * ratioX) / 2);
-      P.scale(ratioX, ratioX);
-    } else {
-      P.translate((P.width - p.w * ratioY) / 2, 0);
-      P.scale(ratioY, ratioY);
-    }
-    P.translate(p.coord_center.x, p.coord_center.y);
-  }
 };
-
-const sim = new p5(simulation, "sketch-holder");

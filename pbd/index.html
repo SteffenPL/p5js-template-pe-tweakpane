@@ -20,7 +20,8 @@
 
 
     <script src="https://cdn.jsdelivr.net/npm/p5@1.2.0/lib/p5.js"></script>
-    <script src="script.js"></script>
+    <script src="p5utils.js"></script>
+    <!-- <script src="script.js"></script> -->
   </head>
 
 
@@ -39,6 +40,10 @@
 
     <script type="module">
       import {Pane} from 'https://cdn.jsdelivr.net/npm/tweakpane@4.0.0/dist/tweakpane.min.js';
+      import {simulation, p} from './script.mjs';
+
+      const sim = new p5(simulation, "sketch-holder");
+
       const pane = new Pane({
         title: "Parameters",
         container: document.getElementById('tweakpane-holder'),
@@ -65,6 +70,9 @@
       }).on('click', () => {
         sim.init();
       });
+
+
+      
     </script>
   </body>
 </html>
