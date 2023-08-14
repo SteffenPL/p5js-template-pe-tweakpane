@@ -1,32 +1,35 @@
 const pv = p5.Vector;
 
-let simulation = function (P5) {
+/** This is the main interface with tweakpane */
+const p = {
+  dt: 0.2,
+  N: 30,
+  R: 5.0,
+  dt_frame: 0.1,
+
+  /** Some constants which are not subject to change! */
+  w: 100, // physical units of the width
+  h: 100, // physical units of the height
+  coord_center: { x: 0, y: 0 }, // physical center of the canvas
+};
+
+let simulation = function (P) {
+  /** export functions for external use */
+  P.setup = setup;
+  P.draw = draw;
+  P.init = init;
+
   /** This is a setup function. */
-  P5.setup = function () {
-    let canvas = createCanvas(400, 400);
-    canvas.parent("sketch-holder");
-
+  function setup() {
+    P.createCanvas(400, 400);
     init();
-  };
-
-  /** This is the main interface with tweakpane */
-  const p = {
-    dt: 0.2,
-    N: 30,
-    R: 5.0,
-    dt_frame: 0.1,
-
-    /** Some constants which are not subject to change! */
-    w: 100, // physical units of the width
-    h: 100, // physical units of the height
-    coord_center: { x: 0, y: 0 }, // physical center of the canvas
-  };
+  }
 
   /** A second dict witch holds the current simulation state */
   let s = {};
 
   function randomPos() {
-    return createVector(random() * p.w, random() * p.h);
+    return P.createVector(P.random() * p.w, P.random() * p.h);
   }
 
   /** Init the simulation state. */
@@ -37,31 +40,11 @@ let simulation = function (P5) {
     for (let i = 0; i < p.N; i++) {
       s.cells.push({
         pos: randomPos(),
-        vel: createVector(0, 0),
-        dx: createVector(0, 0),
+        vel: P.createVector(0, 0),
+        dx: P.createVector(0, 0),
         R: p.R,
       });
     }
-
-    function createHalfspace(ax, ay, bx, by) {
-      const a = createVector(ax, ay);
-      const b = createVector(bx, by);
-      const v = pv.sub(b, a);
-      return {
-        a: a,
-        b: b,
-        l0: v.mag(),
-        v: v,
-        n: v.copy().rotate(-HALF_PI).normalize(),
-      };
-    }
-
-    s.halfspaces = [
-      createHalfspace(0, 0, 0, p.w),
-      createHalfspace(0, p.w, p.h, p.w),
-      createHalfspace(p.h, p.w, p.h, 0.0),
-      createHalfspace(p.h, 0.0, 0.0, 0.0),
-    ];
   }
 
   function projectCellCell(c1, c2) {
@@ -77,60 +60,6 @@ let simulation = function (P5) {
     const f1 = f * 0.5;
     c1.pos.add(n.mult(f1));
     c2.pos.add(n.mult(-1));
-  }
-
-  function projectCellLine(c, l) {
-    c.dx.set(c.pos);
-    c.dx.sub(l.a);
-
-    // compute such that: a + ca * v + cn * n = c.pos
-    const ca = c.dx.dot(l.v) / l.l0;
-    const cn = c.dx.dot(l.n);
-
-    // compute the distance to the line
-    if (abs(cn) > c.R) {
-      return;
-    }
-
-    if (ca < 0) {
-      const d = c.dx.mag();
-      if (d > c.R) {
-        return;
-      }
-
-      // point-cell projection
-      c.pos.add(c.dx.mult(c.R / d));
-    } else if (ca > l.l0) {
-      // point-cell projection
-      c.dx.set(c.pos);
-      c.dx.sub(l.b);
-      const d = c.dx.mag();
-      if (d > c.R) {
-        return;
-      }
-      c.pos.add(c.dx.mult(c.R / d));
-    } else {
-      // point-line projection
-      c.dx.set(l.n);
-      if (cn > 0) c.dx.mult(c.R - cn);
-      else c.dx.mult(-c.R - cn);
-      c.pos.add(c.dx);
-    }
-  }
-
-  function projectHalfspace(c, h) {
-    c.dx.set(c.pos);
-    c.dx.sub(h.a);
-
-    // compute such that: a + ca * v + cn * n = c.pos
-    // const ca = c.dx.dot(h.v) / h.l0;
-    const cn = c.dx.dot(h.n);
-
-    if (cn < c.R) {
-      c.dx.set(h.n);
-      c.dx.mult(c.R - cn);
-      c.pos.add(c.dx);
-    }
   }
 
   let draw_t = 0.0;
@@ -165,53 +94,24 @@ let simulation = function (P5) {
     for (let i = 0; i < s.cells.length; i++) {
       const c = s.cells[i];
       if (c.pos.y > p.h - c.R) c.pos.y = p.h - c.R;
+      if (c.pos.x > p.w - c.R) c.pos.x = p.w - c.R;
+      if (c.pos.y < c.R) c.pos.y = c.R;
+      if (c.pos.x < c.R) c.pos.x = c.R;
     }
 
-    /*
-    // perform collisions
-    for (let i = 0; i < s.cells.length; i++) {
-      const c = s.cells[i];
-      for (let j = 0; j < s.lines.length; j++) {
-        projectCellLine(c, s.lines[j]);
-      }
-    }
-
-    for (let i = 0; i < s.cells.length; i++) {
-      const c = s.cells[i];
-      for (let j = 0; j < s.halfspaces.length; j++) {
-        projectHalfspace(c, s.halfspaces[j]);
-      }
-    }
-  */
     if (draw_t > p.dt_frame) {
       scaleCanvas();
-      background(255);
-
-      // draw the lines
-      stroke(0);
-      strokeWeight(1);
-      for (let i = 0; i < s.lines.length; i++) {
-        const l = s.lines[i];
-        line(l.a.x, l.a.y, l.b.x, l.b.y);
-      }
-
-      // draw the halfspaces
-      stroke(0);
-      strokeWeight(1);
-      for (let i = 0; i < s.halfspaces.length; i++) {
-        const h = s.halfspaces[i];
-        line(h.a.x, h.a.y, h.b.x, h.b.y);
-      }
+      P.background(255);
 
       // draw the cells
-      fill(0);
-      stroke(0, 0, 0, 0);
-      strokeWeight(0);
+      P.fill(0);
+      P.stroke(0, 0, 0, 0);
+      P.strokeWeight(0);
       for (let i = 0; i < s.cells.length; i++) {
         const c = s.cells[i];
-        const irel = round((i / s.cells.length) * 128);
-        fill(irel, 128 - irel, irel);
-        circle(c.pos.x, c.pos.y, 2 * c.R);
+        const irel = P.round((i / s.cells.length) * 128);
+        P.fill(irel, 128 - irel, irel);
+        P.circle(c.pos.x, c.pos.y, 2 * c.R);
       }
 
       draw_t = 0.0;
@@ -221,17 +121,17 @@ let simulation = function (P5) {
   /* Helper functions */
   function scaleCanvas() {
     // we fit a rectangle of w x h into the canvas
-    const ratioX = width / p.w;
-    const ratioY = height / p.h;
+    const ratioX = P.width / p.w;
+    const ratioY = P.height / p.h;
     if (ratioX < ratioY) {
-      translate(0, (height - p.h * ratioX) / 2);
-      scale(ratioX, ratioX);
+      P.translate(0, (P.height - p.h * ratioX) / 2);
+      P.scale(ratioX, ratioX);
     } else {
-      translate((width - p.w * ratioY) / 2, 0);
-      scale(ratioY, ratioY);
+      P.translate((P.width - p.w * ratioY) / 2, 0);
+      P.scale(ratioY, ratioY);
     }
-    translate(p.coord_center.x, p.coord_center.y);
+    P.translate(p.coord_center.x, p.coord_center.y);
   }
 };
 
-let sim = new p5(simulation, "sketch-holder");
+const sim = new p5(simulation, "sketch-holder");
