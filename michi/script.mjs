@@ -33,7 +33,7 @@ export let simulation = function (P) {
 
   /** A second dict witch holds the current simulation state */
   let s = {};
-  
+
   function randomPos() {
     return P.createVector(P.random() * p.w, P.random() * p.h);
   }
@@ -53,7 +53,7 @@ export let simulation = function (P) {
     }
 
     s.lines = [
-      createLine(10, 10, 40, 40),
+      createLine(10, 5, 30, 20),
     ];
   }
 
@@ -74,7 +74,7 @@ export let simulation = function (P) {
 
   let draw_t = 0.0;
 
-  
+
   /** This is a draw function. */
   function draw() {
     s.t += p.dt;
@@ -85,8 +85,8 @@ export let simulation = function (P) {
 
       // compute forces and store into dx
       c.dx.set(c.pos);
-      c.dx.x =  - p.chemo.intensity*(c.pos.x - p.chemo.x);
-      c.dx.y =  - p.chemo.intensity*(c.pos.y - p.chemo.y);
+      c.dx.x = - p.chemo.intensity * (c.pos.x - p.chemo.x);
+      c.dx.y = - p.chemo.intensity * (c.pos.y - p.chemo.y);
 
       // update the position
       c.dx.mult(p.dt);
@@ -121,8 +121,8 @@ export let simulation = function (P) {
 
     P.stroke(0, 0, 0);
     P.strokeWeight(1);
-    P.fill(255,128,0,128);
-    P.circle(p.chemo.x, p.chemo.y,4*p.chemo.intensity);
+    P.fill(255, 128, 0, 128);
+    P.circle(p.chemo.x, p.chemo.y, 4 * p.chemo.intensity);
 
 
     // draw the cells
@@ -140,11 +140,11 @@ export let simulation = function (P) {
 
     P.stroke(0, 0, 0);
     P.strokeWeight(1);
-    P.line(p.left,0,p.left,100);
+    P.line(p.left, 0, p.left, 100);
 
     P.stroke(0, 0, 0);
     P.strokeWeight(1);
-    P.line(p.w,0,p.w,p.h);
+    P.line(p.w, 0, p.w, p.h);
 
     //const m = pixel2World(P.mouseX, P.mouseY);
     //P.circle(m.x, m.y, 1);
@@ -162,13 +162,13 @@ export let simulation = function (P) {
 
     // we fit a rectangle of w x h into the canvas
     const m = p.margin;
-    const w = p.w + 2*m;
-    const h = p.h + 2*m;
+    const w = p.w + 2 * m;
+    const h = p.h + 2 * m;
     const ratioX = P.width / w;
     const ratioY = P.height / h;
-  
-    x -= p.coord_center.x + 3*m;
-    y -= p.coord_center.y + 3*m;
+
+    x -= p.coord_center.x + 3 * m;
+    y -= p.coord_center.y + 3 * m;
     if (ratioX < ratioY) {
       x /= ratioX;
       y /= ratioX;
@@ -178,47 +178,57 @@ export let simulation = function (P) {
       y /= ratioY;
       x -= (P.width - w * ratioY) / 2;
     }
-    return {x: x, y: y}
+    return { x: x, y: y }
   }
-  
+
 
 
   let i_pressed = -1;
+  let j_pressed = -1;
+  let line_start_pressed = true;
 
-  const lastMouse = P.createVector(0,0);
-  const deltaMouse = P.createVector(0,0);
+  const lastMouse = P.createVector(0, 0);
+  const deltaMouse = P.createVector(0, 0);
 
 
   P.mousePressed = function () {
 
     const mobj = pixel2World(P.mouseX, P.mouseY);
-    const m = P.createVector(mobj.x,mobj.y);
+    const m = P.createVector(mobj.x, mobj.y);
 
     let d_min = p.h + p.w;
 
+    for (let i = 0; i < s.cells.length; i++) {
+      const ci = s.cells[i];
+
+      const d = pv.dist(ci.pos, m);
+      if (d < d_min && d < 2 * ci.R) {
+        i_pressed = i;
+        d_min = d;
+      }
+    }
 
     for (let j = 0; j < s.lines.length; j++) {
-
-      for (let i = 0; i < s.cells.length; i++) {
-        const ci = s.cells[i];
-
-        const d = pv.dist(ci.pos, m);
-        if( d < d_min && d < 2 * ci.R ) {
-          i_pressed = i;
-          d_min = d;
-        }
+      const line = s.lines[j];
+      let d = pv.dist(line.a, m);
+      if (d < d_min && d < 2) {
+        i_pressed = -1;
+        j_pressed = j;
+        line_start_pressed = true;
+        d_min = d;
       }
 
-    const cj = s.lines[j];
-    const d = pv.dist(ci.pos, m);
-    if( d < d_min && d < 2 * cj.R ) {
-      j_pressed = j;
-      d_min = d;
-  }
-}
+      d = pv.dist(line.b, m);
+      if (d < d_min && d < 2) {
+        i_pressed = -1;
+        j_pressed = j;
+        line_start_pressed = false;
+        d_min = d;
+      }
+    }
 
-    if( i_pressed > -1) {
-      s.cells[i_pressed].R = 3;
+    if (i_pressed > -1) {
+      //s.cells[i_pressed].R = 2;
     }
 
     lastMouse.set(m);
@@ -226,9 +236,9 @@ export let simulation = function (P) {
 
 
   P.touchMoved = function () {
-    if( i_pressed > -1) {
+    if (i_pressed > -1) {
       const mobj = pixel2World(P.mouseX, P.mouseY);
-      const m = P.createVector(mobj.x,mobj.y);
+      const m = P.createVector(mobj.x, mobj.y);
       s.cells[i_pressed].pos.set(m);
 
       //deltaMouse.set(m);
@@ -239,13 +249,40 @@ export let simulation = function (P) {
 
       //lastMouse.set(m);
     }
+
+    if (j_pressed > -1) {
+      const mobj = pixel2World(P.mouseX, P.mouseY);
+      const m = P.createVector(mobj.x, mobj.y);
+
+      const line = s.lines[j_pressed];
+
+      if (line_start_pressed)
+        line.a.set(m);
+      else
+        line.b.set(m);
+
+      updateLine(line);
+    }
   }
 
-  P. mouseReleased = function () {
-    if( i_pressed > -1) {
+  P.mouseReleased = function () {
+    if (i_pressed > -1) {
       //s.cells[i_pressed].R = 2;
       i_pressed = -1;
     }
+    if (j_pressed > -1) {
+      j_pressed = -1;
+    }
+  }
+
+
+  function updateLine(line) {
+    const a = line.a;
+    const b = line.b;
+    const v = pv.sub(b, a);
+    line.l0 = v.mag();
+    line.v = v;
+    line.n = v.copy().rotate(-P.HALF_PI).normalize();
   }
 
   function createLine(ax, ay, bx, by) {
@@ -260,21 +297,22 @@ export let simulation = function (P) {
       n: v.copy().rotate(-P.HALF_PI).normalize(),
     };
   }
-  
-  
+
+
+
   function projectCellLine(c, l) {
     c.dx.set(c.pos);
     c.dx.sub(l.a);
-  
+
     // compute such that: a + ca * v + cn * n = c.pos
     const ca = c.dx.dot(l.v) / l.l0;
     const cn = c.dx.dot(l.n);
-  
+
     // compute the distance to the line
     if (P.abs(cn) > c.R) {
       return;
     }
-  
+
     if (ca < 0) {
       const d = c.dx.mag();
       if (d > c.R) {
@@ -283,7 +321,7 @@ export let simulation = function (P) {
 
       c.dx.normalize();
       c.dx.mult(c.R - d);
-  
+
       // point-cell projection
       c.pos.add(c.dx);
     } else if (ca > l.l0) {
@@ -308,7 +346,7 @@ export let simulation = function (P) {
       c.pos.add(c.dx);
     }
   }
-  
+
 };
 
 
